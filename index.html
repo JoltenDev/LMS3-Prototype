@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lane Management System prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e6ebee;--panel:#f6f8f9;--ink:#14212b;--mute:#5a6a76;--line:#c9d3d9;--ok:#0b8f6a;--warn:#d98a00;--bad:#d03b3b;--info:#2d6bd6;--off:#7b8892;--chip:#e3e9ed;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a1f;--panel:#1d252c;--ink:#e6edf1;--mute:#93a3ae;--line:#33414b;--ok:#2fd1a0;--warn:#f2b032;--bad:#ff6b6b;--info:#6ea2ff;--off:#8796a1;--chip:#29343c}}
+:root[data-theme="dark"]{--bg:#141a1f;--panel:#1d252c;--ink:#e6edf1;--mute:#93a3ae;--line:#33414b;--ok:#2fd1a0;--warn:#f2b032;--bad:#ff6b6b;--info:#6ea2ff;--off:#8796a1;--chip:#29343c}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 15px/1.4 "Barlow Semi Condensed",system-ui,sans-serif}
+h1{font-size:26px;margin:0;font-weight:700;letter-spacing:.2px}
+h2{font-size:16px;margin:0 0 8px;font-weight:700}
+.wrap{max-width:1180px;margin:0 auto;padding:16px;display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:16px}
+header{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline}
+header p{margin:0;color:var(--mute)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.stage{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#222}
+canvas{display:block;width:100%;height:auto}
+#banner{position:absolute;left:10px;right:10px;top:10px;padding:8px 12px;border-radius:8px;color:#fff;background:var(--off);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#banner[data-t=ok]{background:#0b8f6a}#banner[data-t=warn]{background:#c27a00}#banner[data-t=info]{background:#2d6bd6}#banner[data-t=off]{background:#59656e}
+#bt{font-weight:700;font-size:17px}#bm{font-size:14px;opacity:.95}
+#ack{margin-top:6px;background:#fff;color:#14212b;border-color:#fff}#ack[hidden]{display:none}
+#banner[data-w="1"]:not([data-ack="1"]){animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 4px rgba(255,255,255,.75),0 2px 8px rgba(0,0,0,.3)}}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.tile b{display:block;font-size:24px;font-weight:700;line-height:1.1}.tile span{color:var(--mute);font-size:13px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+button,.seg label{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:8px;padding:6px 11px;cursor:pointer}
+button:hover{border-color:var(--info)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+button.on{background:var(--info);border-color:var(--info);color:#fff}
+.desc{color:var(--mute);margin:0 0 8px}
+ul.exp{margin:0 0 10px;padding-left:18px}ul.exp li{margin:2px 0}
+.acts{display:flex;flex-wrap:wrap;gap:6px}
+.ctl{display:grid;grid-template-columns:110px 1fr 70px;gap:8px;align-items:center;margin:6px 0}
+.ctl output{text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--info)}
+.row{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:8px 0}
+.row label{display:flex;gap:6px;align-items:center}
+.seg{display:flex;gap:0}.seg button{border-radius:0}.seg button:first-child{border-radius:8px 0 0 8px}.seg button:last-child{border-radius:0 8px 8px 0}
+.sub{display:grid;grid-template-columns:12px 150px 1fr;gap:4px 8px;align-items:center;font-size:14px}
+.sub i{width:10px;height:10px;border-radius:50%;background:var(--off);display:block}
+.sub i.ok{background:var(--ok)}.sub i.warn{background:var(--warn)}.sub i.bad{background:var(--bad)}.sub i.info{background:var(--info)}
+.sub .n{font-weight:700}.sub .t{color:var(--mute)}
+#log{list-style:none;margin:0;padding:0;font-size:14px;max-height:190px;overflow:auto}
+#log li{padding:3px 0;border-bottom:1px solid var(--line)}#log time{color:var(--mute);margin-right:8px;font-variant-numeric:tabular-nums}
+.note{color:var(--mute);font-size:13px;margin:6px 0 0}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}.sub{grid-template-columns:12px 110px 1fr}.ctl{grid-template-columns:90px 1fr 60px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<div class="wrap">
+<header><h1>Lane Management System</h1><p>Interactive prototype of LKS, LDWS and LCS. Top-down view of the host vehicle.</p></header>
+
+<section>
+ <div class="stage"><canvas id="cv" width="520" height="620" aria-label="Top-down road simulation"></canvas>
+  <div id="banner" data-t="ok" role="status" aria-live="polite"><div id="bt"></div><div id="bm"></div><button id="ack" hidden>Acknowledge warning</button></div></div>
+ <div class="tiles">
+  <div class="tile"><b id="tSpd">50</b><span>speed, mph</span></div>
+  <div class="tile"><b id="tOff">0.00</b><span>lane offset, m</span></div>
+  <div class="tile"><b id="tSt">0.0</b><span>steering angle, °</span></div>
+  <div class="tile"><b id="tG">0.00</b><span>lateral g (limit 0.5)</span></div>
+  <div class="tile"><b id="tTor">0.0</b><span id="tTorL">driver torque, Nm</span></div>
+  <div class="tile"><b id="tCert">96%</b><span id="tCertL">path certainty</span></div>
+ </div>
+</section>
+
+<section>
+ <div class="card"><h2>Scenarios</h2>
+  <div class="tabs" id="tabs"></div>
+  <p class="desc" id="sDesc"></p><ul class="exp" id="sExp"></ul><div class="acts" id="sActs"></div>
+ </div>
+ <div class="card"><h2>Driver and environment controls</h2>
+  <div class="ctl"><span>Speed</span><input id="spd" type="range" min="20" max="95" step="1"><output id="spdO"></output></div>
+  <div class="ctl"><span>Road curvature</span><input id="cur" type="range" min="-1" max="1" step="0.05"><output id="curO"></output></div>
+  <div class="ctl"><span>Steering torque</span><input id="tor" type="range" min="-10" max="10" step="0.5"><output id="torO"></output></div>
+  <div class="row">
+   <div class="seg" role="group" aria-label="Turn signal"><button data-sig="-1">Left</button><button data-sig="0">Signal off</button><button data-sig="1">Right</button></div>
+   <button id="hands" aria-pressed="true"></button><button id="lms"></button>
+  </div>
+  <div class="row">
+   <label><input type="checkbox" id="lks"> LKS steering</label>
+   <label><input type="checkbox" id="snow"> Heavy snow</label>
+   <label><input type="checkbox" id="cam"> Camera dropout</label>
+  </div>
+  <div class="row"><button id="pl">Push Left</button><button id="pr">Push Right</button><span class="note">LDWS warnings cannot be switched off while LMS is on.</span></div>
+  <p class="note">Keyboard: W or ↑ faster, S or ↓ slower, A or ← steer left, D or → steer right (hold), H hands on or off wheel, Enter acknowledge warning.</p>
+ </div>
+ <div class="card"><h2>Subsystems</h2><div class="sub" id="sub"></div>
+  <p class="note">Acknowledging silences the chime and stops the flashing. It does not clear a fault or re-engage LMS. Every LMS disengagement raises a warning until acknowledged. Keyboard shortcut: Enter.</p>
+  <p class="note">Assumptions: override threshold is 3 Nm at 50 mph and scales with speed (4 Nm in bad road conditions). Required path certainty is 40% at 35 mph, plus 10% per 10 mph.</p></div>
+ <div class="card"><h2>Event log</h2><ul id="log"></ul></div>
+</section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s),cv=$("#cv"),g=cv.getContext("2d");
+const W=520,H=620,PPM=22,LW=3.7,CARY=500;
+const S={spd:50,curv:0,tor:0,sig:0,hands:true,lks:true,enabled:true,latch:false,snow:0,snowT:0,cam:false,pos:0,gust:0,odo:0,mode:"",clear:0,t:0,st:0,steer:0,g:0,lkAct:false,ldw:false,move:null,script:[],cones:false,cert:96,req:55,thr:3,cause:"",tick:0,ack:false,lastBeep:0,disWarn:false,disMsg:""};
+try{const v=localStorage.getItem("lms-enabled");if(v!==null)S.enabled=v==="1"}catch(e){}
+const flakes=Array.from({length:150},()=>({x:Math.random()*W,y:Math.random()*H,s:1+Math.random()*2.5,v:60+Math.random()*90}));
+
+const K={};
+/* sound + log */
+let ac;function beep(f,d){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),a=ac.createGain();o.frequency.value=f;a.gain.value=.06;o.connect(a);a.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
+function buzz(){try{navigator.vibrate&&navigator.vibrate(120)}catch(e){}}
+function log(t){const li=document.createElement("li"),m=Math.floor(S.t/60),s=Math.floor(S.t%60);li.innerHTML="<time>"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")+"</time>";li.append(t);const L=$("#log");L.prepend(li);while(L.children.length>40)L.lastChild.remove()}
+
+/* modes */
+const M={ACTIVE:["ok","LMS is active","Centering in lane"],STANDBY:["off","LMS is on standby","Speed is below 35 mph. Operates above 35 mph and below 85 mph"],HIGH:["warn","LMS unavailable; speed is out of range","Reduce speed below 85 mph to re-enable"],OFF:["off","LMS off","Select Enable LMS to turn it on"],SUSPEND:["info","LMS paused","Turn signal on. Driver is changing lanes"],HANDS:["warn","Hands off wheel","LMS disengaged. Put hands on the wheel"],OVERRIDE:["info","Driver override","You have control. Re-engage LMS to resume"],FAULT:["warn","LMS Unavailable; Returning control to driver.",""],RECOVER:["warn","Checking road markings","LMS resumes once markings stay clear"]};
+const thrNow=()=>(S.snow>.3?4:3*Math.sqrt(S.spd/50));
+const laneIdx=()=>Math.max(-1,Math.min(1,Math.round(S.pos/LW)));
+
+function step(dt){
+ S.t+=dt;S.st+=dt;
+ if(S.ramp){const d=S.ramp.to-S.spd,r=S.ramp.rate*dt;if(Math.abs(d)<=r){S.spd=S.ramp.to;S.ramp=null}else S.spd+=Math.sign(d)*r}
+ if(K.up||K.down){S.ramp=null;S.spd=Math.max(20,Math.min(95,S.spd+((K.up?1:0)-(K.down?1:0))*15*dt))}
+ const kd=(K.right?1:0)-(K.left?1:0);
+ if(kd){S.tor=Math.max(-10,Math.min(10,S.tor+kd*14*dt));S.keyT=true;if(!S.hands){S.hands=true;log("Driver grips wheel to steer")}}
+ else if(S.keyT){S.tor*=Math.exp(-6*dt);if(Math.abs(S.tor)<.1){S.tor=0;S.keyT=false}}
+ while(S.script.length&&S.script[0].t<=S.st)S.script.shift().f();
+ S.snow+=(S.snowT-S.snow)*Math.min(1,dt*1.2);
+ const ms=S.spd*.447,vis=S.cam?0:Math.max(0,1-S.snow*1.15);
+ S.cert=S.cam?0:Math.max(0,96-6*Math.abs(S.curv)-S.snow*80+Math.sin(S.t*3)*1.2-(S.cones?10:0));
+ S.req=40+Math.max(0,S.spd-35);S.thr=thrNow();
+ S.g=ms*ms*Math.abs(S.curv)/600/9.8;
+ const bad=S.cert<S.req||(S.mode==="ACTIVE"&&(Math.abs(S.steer)>15||S.g>.5));
+ S.cause=S.cam?"Camera feed lost":S.snow>.3?"Lane markings obscured":S.cert>=S.req?"LCS limit exceeded (15° steering or 0.5 g)":"Path certainty below minimum";
+ let m;
+ if(!S.enabled)m="OFF";
+ else if(S.spd<=35)m="STANDBY";
+ else if(S.spd>=85)m="HIGH";
+ else if(bad){m="FAULT";S.clear=0}
+ else if((S.mode==="FAULT"||S.mode==="RECOVER")&&(S.clear+=dt)<2)m="RECOVER";
+ else if(S.sig)m="SUSPEND";
+ else if(!S.hands)m="HANDS";
+ else if(Math.abs(S.tor)>S.thr||S.latch){S.latch=true;m="OVERRIDE"}
+ else m="ACTIVE";
+ if(m!==S.mode){onMode(S.mode,m)}
+ if((m==="FAULT"||m==="HANDS")&&!S.ack&&S.t-S.lastBeep>2){S.lastBeep=S.t;beep(m==="FAULT"?300:380,.3)}
+ S.mode=m;
+ /* lateral dynamics */
+ const idx=laneIdx(),off=S.pos-idx*LW,drift=-S.curv*.9*Math.pow(S.spd/60,2);
+ let v;
+ if(m==="ACTIVE"){
+  if(Math.abs(off)>.9&&!S.lkAct&&S.lks){S.lkAct=true;S.ack=false;log("LKS intervening: lane boundary touched, steering back into lane");beep(660,.15)}
+  if(Math.abs(off)<.45)S.lkAct=false;
+  if(!S.lks)S.lkAct=false;
+  if(S.lkAct){v=drift+S.gust-Math.sign(off)*1.3;S.steer=-Math.sign(off)*10}
+  else{const c=Math.max(-1.5,Math.min(1.5,-2.2*off-drift*.9));v=drift+c+S.gust;S.steer=c*8+S.curv*4}
+ }else{S.lkAct=false;v=drift+S.gust+(Math.abs(S.tor)>S.thr||m!=="OVERRIDE"?S.tor*.28:0);S.steer=S.tor*1.5+S.curv*4}
+ S.gust*=Math.exp(-1.6*dt);
+ if(S.move){v=S.move.dir*1.4;if((S.move.dir>0&&S.pos>=S.move.to)||(S.move.dir<0&&S.pos<=S.move.to))S.move=null}
+ S.v=v;S.pos=Math.max(-4.6,Math.min(4.6,S.pos+v*dt));
+ S.odo+=ms*dt*.6;
+ /* LDWS */
+ const o2=S.pos-laneIdx()*LW,live=S.enabled&&S.spd>35&&S.spd<85;
+ const w=live&&vis>.3&&Math.abs(o2)>.9&&(!S.sig||Math.sign(o2)===-S.sig);
+ if(w&&!S.ldw){S.ack=false;beep(520,.2);buzz();
+  if(S.sig)log("LDWS warning: departing opposite the "+(S.sig>0?"right":"left")+" turn signal, so the warning is not suppressed");
+  else{log("SCS: no turn signal and no driver torque, departure classed as unintentional");log("LDWS warning: HUD alert, chime and steering wheel haptic feedback")}}
+ if(["OFF","STANDBY","HIGH","FAULT","RECOVER","HANDS"].includes(m)&&Math.abs(o2)>1.4&&!S.sig&&!S.offL){S.offL=true;log("No lane control: car has left its lane because LMS is "+(m==="OFF"?"off":"not engaged")+(Math.abs(S.curv)>.05?" and the curve pushes it outward":""))}
+ if(Math.abs(o2)<.5)S.offL=false;
+ S.ldw=w;S.off=o2;S.vis=vis;
+}
+function onMode(a,b){
+ S.ack=false;S.lastBeep=S.t;const d=b==="FAULT"?S.cause:M[b][2];
+ S.disWarn=false;
+ if(a==="ACTIVE"&&b!=="ACTIVE"){S.disWarn=true;S.disMsg={SUSPEND:"turn signal on",STANDBY:"speed below 35 mph",HIGH:"speed above 85 mph",OFF:"disabled by driver",HANDS:"hands off wheel",OVERRIDE:"driver override",FAULT:S.cause}[b]||"";if(b==="SUSPEND"||b==="STANDBY"||b==="HIGH"||b==="OFF")beep(420,.25)}
+ log((b==="FAULT"?"Fault: ":"")+M[b][1].replace(/\.$/,"")+(d?" — "+d:""));
+ if(b==="FAULT"){beep(300,.5);S.lkAct=false;log("SCS blocks reactivation until subsystem checks pass; steering and braking interventions released")}
+ if(b==="OVERRIDE"){beep(440,.15);buzz();log("Steering torque "+Math.abs(S.tor).toFixed(1)+" Nm exceeded "+S.thr.toFixed(1)+" Nm threshold; LKS and LCS released")}
+ if((a==="STANDBY"||a==="HIGH")&&b==="ACTIVE")log("Speed back inside 35 to 85 mph: LMS, LDWS and LKS re-enabled");
+ if(a==="SUSPEND"&&b==="ACTIVE")log("Turn signal off: LMS resumes sensing and centering in new lane");
+ if(b==="HANDS")beep(380,.3);
+}
+
+/* drawing */
+const shift=y=>{const d=Math.max(0,CARY-y);return S.curv*.0005*d*d};
+const X=(m,y)=>W/2+(m-S.pos)*PPM+shift(y);
+function line(m,col,w,dash,a){g.save();g.globalAlpha=a;g.strokeStyle=col;g.lineWidth=w;g.setLineDash(dash||[]);g.lineDashOffset=S.odo*PPM;g.beginPath();for(let y=H;y>=0;y-=10){y===H?g.moveTo(X(m,y),y):g.lineTo(X(m,y),y)}g.stroke();g.restore()}
+function band(a,b,col){g.fillStyle=col;g.beginPath();for(let y=H;y>=0;y-=10)g.lineTo(X(a,y),y);for(let y=0;y<=H;y+=10)g.lineTo(X(b,y),y);g.fill()}
+function draw(){
+ const dark=matchMedia("(prefers-color-scheme: dark)").matches;
+ g.fillStyle=dark?"#4a5340":"#7d8869";g.fillRect(0,0,W,H);
+ band(-5.9,5.9,"#2f353b");band(-5.55,5.55,"#3a4148");
+ const vis=S.vis===undefined?1:S.vis;
+ const ci=laneIdx(),a=ci*LW-LW/2,b=ci*LW+LW/2;
+ if(S.mode==="ACTIVE"||S.mode==="OVERRIDE"||S.mode==="SUSPEND"){if(vis>.5){band(a,b,S.mode==="ACTIVE"?"rgba(40,200,150,.22)":"rgba(80,140,255,.18)");if(S.mode==="ACTIVE")line(ci*LW,"rgba(255,255,255,.7)",2,[6,10],1)}}
+ line(-5.55,"#f2c230",4,null,vis);line(5.55,"#f4f4f4",4,null,vis);
+ line(-LW/2,"#f4f4f4",3,[3*PPM,9*PPM],vis);line(LW/2,"#f4f4f4",3,[3*PPM,9*PPM],vis);
+ if(S.cones){for(let i=0;i<7;i++){const y=((S.odo*PPM+i*100)%(H+100))-50,x=X(5.0,y)+Math.sin(i*5)*3;g.fillStyle="#ff7a1a";g.beginPath();g.moveTo(x,y-9);g.lineTo(x+6,y+6);g.lineTo(x-6,y+6);g.fill();g.fillStyle="#fff";g.fillRect(x-3,y,6,2)}}
+ if(S.ldw){const side=S.off>0?1:-1,al=S.ack?.8:.55+.45*Math.sin(S.t*14);line(ci*LW+side*LW/2,"#ff3b3b",7,null,al)}
+ if(S.snow>.02){g.fillStyle="rgba(238,244,249,"+(S.snow*.6)+")";g.fillRect(0,0,W,H);g.fillStyle="rgba(255,255,255,"+Math.min(1,S.snow+.1)+")";for(const f of flakes){f.y+=f.v*.016;f.x+=Math.sin(f.y/30)*.4;if(f.y>H){f.y=-4;f.x=Math.random()*W}g.beginPath();g.arc(f.x,f.y,f.s,0,7);g.fill()}}
+ if(S.cam){g.fillStyle="rgba(10,12,14,.82)";g.fillRect(0,0,W,H*.62);g.fillStyle="#9aa7b0";g.font="600 20px sans-serif";g.textAlign="center";g.fillText("FORWARD CAMERA: NO SIGNAL",W/2,H*.5);g.textAlign="left"}
+ /* car */
+ g.save();g.translate(W/2,CARY);g.rotate(Math.atan((S.v||0)/Math.max(8,S.spd*.447)));
+ g.fillStyle="rgba(0,0,0,.3)";g.fillRect(-19,-46,42,100);
+ g.fillStyle="#e9eef2";g.beginPath();g.roundRect(-21,-48,42,96,9);g.fill();g.strokeStyle="#16222c";g.lineWidth=2;g.stroke();
+ g.fillStyle="#2a3a47";g.beginPath();g.roundRect(-15,-28,30,16,4);g.fill();g.beginPath();g.roundRect(-15,12,30,12,4);g.fill();
+ if(S.sig&&Math.floor(S.t*3)%2===0){g.fillStyle="#ffb000";g.fillRect(S.sig<0?-23:19,-48,4,10);g.fillRect(S.sig<0?-23:19,38,4,10)}
+ g.restore();
+}
+
+/* UI */
+const SUBS=["CSS camera","IPS image proc.","VSES vehicle state","PPS path prediction","SCS supervisory","LCS lane centering","LKS lane keeping","LDWS departure warn","UIS interface"];
+$("#sub").innerHTML=SUBS.map((n,i)=>`<i id="d${i}"></i><span class="n">${n}</span><span class="t" id="x${i}"></span>`).join("");
+function setSub(i,c,t){$("#d"+i).className=c;$("#x"+i).textContent=t}
+function render(){
+ const m=S.mode,[tone,title,msg0]=M[m],vis=S.vis===undefined?1:S.vis,act=m==="ACTIVE";
+ let msg=m==="FAULT"?S.cause:m==="RECOVER"?"LMS resumes in "+Math.max(0,2-S.clear).toFixed(1)+" s once markings stay clear":act&&S.lkAct?"LKS correcting a lane departure":msg0;
+ const warn=m==="FAULT"||m==="RECOVER"||m==="HANDS"||m==="OVERRIDE"||S.ldw||S.disWarn||(act&&S.lkAct);
+ if(S.ldw&&!S.lkAct&&(act||m==="SUSPEND"))msg="Lane departure warning"+(S.sig?" (departing opposite the turn signal)":"");
+ if(S.disWarn&&!S.ack&&m!=="FAULT"&&m!=="RECOVER")msg="LMS disengaged ("+S.disMsg+"). "+msg0;
+ if(warn&&S.ack)msg+=" (acknowledged)";
+ const B=$("#banner");B.dataset.t=tone;B.dataset.w=warn?1:0;B.dataset.ack=warn&&S.ack?1:"";
+ $("#bt").textContent=title;$("#bm").textContent=msg;$("#ack").hidden=!warn||S.ack;
+ $("#tSpd").textContent=Math.round(S.spd);$("#tOff").textContent=(S.off||0).toFixed(2);$("#tSt").textContent=S.steer.toFixed(1);
+ $("#tG").textContent=S.g.toFixed(2);$("#tTor").textContent=Math.abs(S.tor).toFixed(1);$("#tTorL").textContent="torque, Nm (limit "+S.thr.toFixed(1)+")";
+ $("#tCert").textContent=Math.round(S.cert)+"%";$("#tCertL").textContent="certainty (needs "+Math.round(S.req)+"%)";
+ $("#tCert").style.color=S.cert<S.req?"var(--bad)":"";
+ setSub(0,S.cam?"bad":vis<.4?"warn":"ok",S.cam?"No signal":vis<.4?"Image obscured":"Capturing path and boundaries");
+ setSub(1,vis<.4?"bad":"ok",vis<.4?"No marker data":S.cones?"Boundaries tracked through cone noise (-10% certainty)":"Left and right boundaries tracked");
+ setSub(2,"ok",Math.round(S.spd)+" mph, steer "+S.steer.toFixed(1)+"°, curvature "+S.curv.toFixed(2));
+ setSub(3,S.cert<S.req?"bad":"ok",S.cert<S.req?"Insufficient data, not guessing":"Trajectory predicted, certainty "+Math.round(S.cert)+"%");
+ setSub(4,{ACTIVE:"ok",SUSPEND:"info",OVERRIDE:"info",FAULT:"warn",RECOVER:"warn",HANDS:"warn",HIGH:"warn"}[m]||"",m.toLowerCase());
+ setSub(5,act&&!S.lkAct?"ok":"",act?(S.lkAct?"Suppressed by LKS":"Centering lane"):"Disengaged");
+ setSub(6,S.lkAct?"warn":act&&S.lks?"ok":"",S.lkAct?"Intervening":!S.lks?"Off (driver toggle)":act?"Armed":"Disengaged");
+ setSub(7,S.ldw?"bad":S.enabled&&S.spd>35&&S.spd<85?(m==="FAULT"?"warn":"ok"):"",S.ldw?"Warning: lane departure":!(S.enabled&&S.spd>35&&S.spd<85)?"Off":m==="FAULT"?"Lane not recognised":m==="SUSPEND"?"Suppressed by turn signal":"Monitoring (always on)");
+ setSub(8,tone==="off"?"":tone,title);
+ $("#lms").textContent=!S.enabled?"Enable LMS":S.latch&&m==="OVERRIDE"?"Re-engage LMS":"Disable LMS";
+ $("#lms").classList.toggle("on",!S.enabled||(S.latch&&m==="OVERRIDE"));
+ document.querySelectorAll("[data-sig]").forEach(b=>b.classList.toggle("on",+b.dataset.sig===S.sig));
+ $("#spdO").textContent=Math.round(S.spd)+" mph";$("#curO").textContent=S.curv.toFixed(2);$("#torO").textContent=S.tor.toFixed(1)+" Nm";
+ $("#tor").value=S.tor;$("#spd").value=S.spd;$("#cur").value=S.curv;$("#hands").textContent=S.hands?"Hands on wheel (click to release)":"Hands off wheel (click to grip)";$("#hands").classList.toggle("on",!S.hands);$("#hands").setAttribute("aria-pressed",S.hands);$("#lks").checked=S.lks;$("#snow").checked=S.snowT>0;$("#cam").checked=S.cam;
+}
+
+/* inputs */
+$("#spd").oninput=e=>{S.ramp=null;S.spd=+e.target.value};$("#cur").oninput=e=>S.curv=+e.target.value;$("#tor").oninput=e=>{S.tor=+e.target.value;S.keyT=false};
+function ack(){if($("#ack").hidden)return;S.ack=true;S.disWarn=false;log("Driver acknowledged: "+$("#bt").textContent.replace(/\.$/,""));render()}
+$("#ack").onclick=ack;
+const KM={w:"up",arrowup:"up",s:"down",arrowdown:"down",a:"left",arrowleft:"left",d:"right",arrowright:"right"};
+addEventListener("keydown",e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const k=e.key.toLowerCase();
+ if(KM[k]){K[KM[k]]=true;e.preventDefault();return}
+ if(k==="h"){setHands(!S.hands);return}
+ if(k==="enter"&&!e.target.matches("input,button"))ack()});
+addEventListener("keyup",e=>{const k=KM[e.key.toLowerCase()];if(k)K[k]=false});
+addEventListener("blur",()=>{for(const k in K)K[k]=false});
+document.querySelectorAll("[data-sig]").forEach(b=>b.onclick=()=>{S.sig=+b.dataset.sig});
+function setHands(v){S.hands=v;if(!v){S.tor=0;S.keyT=false}log(v?"Hands back on wheel":"Wheel released: hands off, steering torque 0")}
+$("#hands").onclick=()=>setHands(!S.hands);
+$("#lks").onchange=e=>{S.lks=e.target.checked;log("LKS steering "+(S.lks?"enabled":"disabled by driver; LMS and LDWS stay on"))};
+$("#snow").onchange=e=>{S.snowT=e.target.checked?1:0;log(S.snowT?"Heavy snow begins":"Snow clears")};
+$("#cam").onchange=e=>{S.cam=e.target.checked;log(S.cam?"Camera signal dropout":"Camera signal restored")};
+$("#pl").onclick=()=>S.gust=-2.6;$("#pr").onclick=()=>S.gust=2.6;
+function setEnabled(v){S.enabled=v;if(v)S.latch=false;try{localStorage.setItem("lms-enabled",v?"1":"0")}catch(e){}log(v?"Driver enabled LMS":"Driver disabled LMS; stays off until enabled again")}
+$("#lms").onclick=()=>{if(!S.enabled||(S.latch&&S.mode==="OVERRIDE")){S.tor=0;setEnabled(true)}else setEnabled(false)};
+
+/* scenarios */
+const run=(...a)=>{S.st=0;S.script=a.map(([t,f])=>({t,f})).sort((x,y)=>x.t-y.t)};
+const SC=[
+{n:"1 Ideal conditions",p:{spd:50,curv:0},d:"50 mph on a straight highway with clear markings and the turn signal off.",e:["Camera and IPS detect left and right boundaries","VSES confirms 50 mph, neutral steering, zero curvature","PPS predicts the car stays centred","SCS keeps LCS and LKS active; UIS shows a solid green indicator"],a:[["Push Left",()=>S.gust=-2.6],["Push Right",()=>S.gust=2.6]]},
+{n:"2 Curved road",p:{spd:60,curv:.7,cones:true},d:"60 mph through a continuous curve with construction cones at the edge.",e:["VSES reports steering change and non-zero curvature","Cameras track curved boundaries ahead","PPS expects drift toward the outer boundary","LCS steers to stay centred without crossing a marking"],a:[["Curve left",()=>S.curv=-.7],["Curve right",()=>S.curv=.7],["Sharper curve",()=>S.curv=1],["Disable LMS (car drifts out)",()=>setEnabled(false)],["Enable LMS",()=>setEnabled(true)],["Toggle cones",()=>{S.cones=!S.cones;log(S.cones?"Construction cones appear: marker noise lowers path certainty by 10%":"Cones removed")}]]},
+{n:"3 Failure and degradation",p:{spd:55,curv:0},d:"55 mph. Heavy snow or a camera dropout removes the lane data.",e:["IPS reports no marker data","PPS reports insufficient data and does not guess","LKS and LCS release steering at once","UIS sounds a chime, shows an amber light and the HUD message"],a:[["Heavy snow",()=>{S.snowT=1;log("Heavy snow begins")}],["Camera dropout",()=>{S.cam=true;log("Camera signal dropout")}],["Clear conditions",()=>{S.snowT=0;S.cam=false;log("Conditions clear")}]]},
+{n:"4 Driver override",p:{spd:65,curv:0},d:"65 mph with LMS holding the lane. Run each case, or use the manual controls.",e:["Case A: turn signal pauses LDWS and LKS, then LMS resumes in the new lane","Case B: torque above the speed-adjusted threshold releases LKS and LCS","UIS gives audible and haptic confirmation of the handoff"],a:[["Case A: signal lane change",()=>{S.latch=false;run([0,()=>{S.sig=1;log("Auto driver: turns on right signal")}],[.8,()=>{S.move={dir:1,to:S.pos+LW};log("Auto driver: steers into the right lane; LMS is paused, so no warning or correction")}],[4,()=>{S.sig=0;log("Auto driver: signal off, car settled in new lane")}])}],["Case B: torque override",()=>{run([0,()=>{S.tor=2;log("Auto driver: light torque 2 Nm, below the threshold, so LMS should stay engaged")}],[1,()=>{S.tor=-5;log("Auto driver: swerves left with 5 Nm to avoid an obstacle")}],[2.2,()=>{S.tor=0;log("Auto driver: releases torque, driver still has control")}])}],["Case C: drift opposite signal",()=>{run([0,()=>{S.sig=1;log("Auto driver: right signal on")}],[.8,()=>{S.gust=-3.6;log("Auto driver: car drifts left, opposite the signal")}],[4,()=>{S.sig=0;log("Auto driver: signal off")}])}],["Re-engage LMS",()=>{S.tor=0;setEnabled(true)}]]},
+{n:"5 Speed boundaries",p:{spd:30,curv:0},d:"Speed starts at 30 mph, rises above 85 mph, then falls back below 85 mph on a clear straight road.",e:["VSES reports speed to SCS continuously","LCS, LDWS and LKS stay inactive at or below 35 mph and switch on above it","SCS disengages above 85 mph and re-enables when speed falls back below 85 mph","UIS shows grey standby, solid active, or unavailable (speed out of range), with a chime on disengagement"],a:[["Run speed sweep",()=>run([0,()=>{S.spd=30;S.ramp={to:90,rate:7};log("Auto driver: accelerates from 30 mph to 90 mph")}],[9.5,()=>{S.ramp={to:80,rate:3.5};log("Auto driver: decelerates back toward 80 mph")}])],["Jump to 30 mph",()=>{S.ramp=null;S.spd=30}],["Jump to 90 mph",()=>{S.ramp=null;S.spd=90}]]},
+{n:"6 Unintentional departure",p:{spd:55,curv:0},d:"55 mph, straight and clear. The driver is distracted and the car drifts toward the left boundary.",e:["Camera and IPS see the left marking approaching","SCS confirms no turn signal and no driver torque, so the departure is unintentional","LDWS warns with HUD, chime and steering wheel haptics","LKS applies a corrective steering input back to lane centre"],a:[["Run distracted drift left",()=>run([0,()=>{log("Auto driver: distracted, no signal, no steering input; car drifts left");S.gust=-3.8}])],["Drift right",()=>{log("Auto driver: distracted, car drifts right");S.gust=3.8}]]}
+];
+function load(i){
+ const c=SC[i];Object.assign(S,{ramp:null,offL:false,keyT:false,pos:0,gust:0,snow:0,snowT:0,cam:false,sig:0,tor:0,latch:false,hands:true,lks:true,enabled:true,move:null,script:[],cones:false,mode:"",lkAct:false,ack:false,clear:0,curv:0},c.p);
+ $("#sDesc").textContent=c.d;$("#sExp").innerHTML=c.e.map(x=>"<li>"+x+"</li>").join("");
+ $("#sActs").replaceChildren(...c.a.map(([l,f])=>{const b=document.createElement("button");b.textContent=l;b.onclick=f;return b}));
+ document.querySelectorAll("#tabs button").forEach((b,j)=>b.classList.toggle("on",j===i));
+ log("Scenario loaded: "+c.n);
+}
+$("#tabs").replaceChildren(...SC.map((c,i)=>{const b=document.createElement("button");b.textContent=c.n;b.onclick=()=>load(i);return b}));
+log("Startup diagnostics: all cameras passed, LMS may activate");
+const keep=S.enabled;load(0);S.enabled=keep;
+
+/* loop */
+let last=performance.now();
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);draw();if(++S.tick%4===0)render();requestAnimationFrame(frame)}
+step(.016);render();requestAnimationFrame(frame);
+</script>
+</body></html>
